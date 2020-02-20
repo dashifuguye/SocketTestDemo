@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="130dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="20dp"
+        android:columnCount="4"
+        android:rowCount="3"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
+
+        <TextView android:layout_width="50dp"
+            android:layout_height="40dp"
+            android:gravity="center_vertical"
+            android:text="端口："
+            android:textSize="16sp"/>
+
+        <EditText
+            android:id="@+id/port_et"
+            android:layout_width="100dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="40dp"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:hint="默认8000"
+            android:inputType="number"
+            android:textSize="14sp"/>
+        <Button
+            android:id="@+id/startListen"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:text="开始监听" />
+
+        <Button
+            android:id="@+id/stopListen"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="0"
+            android:layout_column="2"
+            android:text="停止监听" />
+
+        <Button
+            android:id="@+id/autoGroup"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="0"
+            android:layout_column="3"
+            android:text="自动分组" />
+
+        <TextView android:layout_width="50dp"
+            android:layout_height="40dp"
+            android:gravity="center_vertical"
+            android:text="周期："
+            android:textSize="16sp"
+            android:layout_row="1"
+            android:layout_column="0"/>
+
+        <EditText
+            android:id="@+id/period_et"
+            android:layout_width="80dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="40dp"
+            android:layout_row="1"
+            android:layout_column="0"
+            android:hint="默认1000"
+            android:inputType="number"
+            android:textSize="14sp"/>
+
+        <TextView android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:gravity="center_vertical"
+            android:layout_marginStart="120dp"
+            android:text="ms"
+            android:textSize="16sp"
+            android:layout_row="1"
+            android:layout_column="0"/>
+        <Button
+            android:id="@+id/getStatus"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="1"
+            android:layout_column="1"
+            android:text="获取状态" />
+
+        <Button
+            android:id="@+id/pack"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="1"
+            android:layout_column="2"
+            android:text="打包" />
+
+        <Button
+            android:id="@+id/backup"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="1"
+            android:layout_column="3"
+            android:text="备份" />
+
+        <Button
+            android:id="@+id/getTurbine"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="2"
+            android:layout_column="0"
+            android:text="获取缩略图" />
+
+        <Button
+            android:id="@+id/getImage"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="2"
+            android:layout_column="1"
+            android:text="获取原图" />
+
+        <Button
+            android:id="@+id/confirmTurbine"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="2"
+            android:layout_column="2"
+            android:text="确认风机" />
+
+        <Button
+            android:id="@+id/powerOffCC"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="2"
+            android:layout_column="3"
+            android:text="关闭机载电脑" />
+
+        <Button
+            android:id="@+id/customMsg"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="2"
+            android:layout_column="2"
+            android:text="自定义消息"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/moveImg"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_row="1"
+            android:layout_column="0"
+            android:text="移动图片"
+            android:visibility="gone" />
+
+    </GridLayout>
+
+    <LinearLayout
+        android:id="@+id/turbine_info_input_layout"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginStart="30dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:gravity="center_vertical"
+            android:text="风场Id："
+            android:textSize="16sp"/>
+
+        <EditText
+            android:id="@+id/farm_id_et"
+            android:layout_width="100dp"
+            android:layout_height="40dp"
+            android:inputType="number"/>
+
+        <TextView android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginStart="40dp"
+            android:gravity="center_vertical"
+            android:text="风机号："
+            android:textSize="16sp"/>
+
+        <EditText
+            android:id="@+id/turbine_num_et"
+            android:layout_width="100dp"
+            android:layout_height="40dp"
+            android:inputType="number"/>
+
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#000000" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="收到消息：" />
+
+            <TextView
+                android:id="@+id/receivedMsg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                 android:layout_marginTop="10dp"
+                android:layout_marginBottom="30dp"
+                android:scrollbars="vertical"
+                android:fadeScrollbars="false"
+                android:textIsSelectable="true"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#000000" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="心跳消息：" />
+
+            <TextView
+                android:id="@+id/heartbeatMsg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="30dp"
+                android:scrollbars="vertical"
+                android:fadeScrollbars="false"
+                android:textIsSelectable="true"/>
+        </LinearLayout>
+    </LinearLayout>
+
+
+
+
+</LinearLayout>
