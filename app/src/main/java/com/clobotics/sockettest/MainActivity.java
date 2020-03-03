@@ -10,15 +10,18 @@ import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -75,6 +78,8 @@ public class MainActivity extends AppCompatActivity {
     EditText periodEt;
     @InjectView(R.id.heartbeatMsg)
     TextView heartbeatMsg;
+    @InjectView(R.id.imageView)
+    ImageView imageView;
     private Timer getStatusTimer;
     private GetTurbineResult getTurbineResult;
     private int statusPeriod = 1000;
@@ -92,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         receivedMsg.setMovementMethod(ScrollingMovementMethod.getInstance());
         heartbeatMsg.setMovementMethod(ScrollingMovementMethod.getInstance());
         mContext = this;
-        registerReceiver();
+        //      registerReceiver();
     }
 
     public void registerReceiver() {
@@ -149,6 +154,14 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onReceivedImageEventHappen(ReceivedImageEvent event) {
+        imageView.setVisibility(View.VISIBLE);
+        Glide.with(this)
+                .load(Base64.decode(event.msg, Base64.DEFAULT))
+                .into(imageView);
+        PicDownload.saveImage("socketTest1.jpg", event.msg, this);
+    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onReceivedMsgEventHappen(ReceivedMsgEvent event) {

@@ -5,6 +5,8 @@ import android.util.Log;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,6 +17,8 @@ import java.net.SocketException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import Decoder.BASE64Encoder;
 
 /**
  * @author: Aya
@@ -29,7 +33,7 @@ public class CCSocket {
     private boolean isEnabled;
     private final ExecutorService threadPool;//线程池
 
-    private  int port;
+    private int port;
 
     public static CCSocket getInstance() {
         if (mCCSocket == null) {
@@ -42,8 +46,8 @@ public class CCSocket {
         threadPool = Executors.newCachedThreadPool();
     }
 
-    public void startListen(int port){
-       this.port = port;
+    public void startListen(int port) {
+        this.port = port;
         isEnabled = true;
         new Thread() {
             public void run() {
@@ -73,7 +77,9 @@ public class CCSocket {
             serverSocket = new ServerSocket(port);
             while (isEnabled) {
                 final Socket socket = serverSocket.accept();
-                socket.setSoTimeout(30000);
+                Log.d(TAG, "收到连接:" + socket.toString());
+                EventBus.getDefault().post(new ReceivedMsgEvent("收到连接:" + socket.toString()));
+                socket.setSoTimeout(SocketConst.SOCKET_TIMEOUT);
                 threadPool.submit(new Runnable() {
                     @Override
                     public void run() {
@@ -84,25 +90,32 @@ public class CCSocket {
                                 os = socket.getOutputStream();
                                 byte[] b = new byte[5];
                                 int len = 0;
+                                int dataLength = 0;
                                 boolean isReadLen = true;
+                                StringBuilder sb = new StringBuilder();
                                 while (isEnabled && (len = is.read(b)) != -1) {
                                     if (isReadLen) {
-                                        if (b[0]=='$'){
+                                        if (b[0] == '$') {
+                                            sb = new StringBuilder();
                                             byte[] lenBytes = new byte[4];
                                             System.arraycopy(b, 1, lenBytes, 0, 4);
-                                            int ll = byteArrayToInt(lenBytes);
-                                            Log.d(TAG,"接受数据长度:" + ll);
-                                            b = new byte[ll];
+                                            dataLength = byteArrayToInt(lenBytes);
+                                            Log.d(TAG, "接受数据长度:" + dataLength);
+                                            b = new byte[dataLength];
                                             isReadLen = false;
                                         }
                                     } else {
-                                        isReadLen = true;
                                         String msg = new String(b, 0, len, "UTF-8");
-                                        Log.d(TAG,"接受到内容:" + msg+",len:"+msg.length());
-                                        if(!TextUtils.isEmpty(msg.trim())) {
-                                            callProcessedMethod(msg);
+                                        Log.d(TAG, "接受到内容:" + msg + ",len:" + msg.length());
+                                        sb.append(msg);
+                                        if (sb.length() == dataLength) {
+
+                                            isReadLen = true;
+                                            if (!TextUtils.isEmpty(msg.trim())) {
+                                                callProcessedMethod(sb.toString());
+                                            }
+                                            b = new byte[5];
                                         }
-                                        b = new byte[5];
                                     }
                                 }
                             } catch (Exception e) {
@@ -146,10 +159,10 @@ public class CCSocket {
                         System.arraycopy(lenBytes, 0, sendBytes, 1, 4);//1-4位置个共4个字节存储数据长度
                         System.arraycopy(b, 0, sendBytes, 5, b.length);//5位置之后存储数据
                         os.write(sendBytes);
-                        Log.d(TAG, "sendUP2Message:" + msg +",len:"+msg.length());
-                    } catch (SocketException e){
-                        Log.d(TAG,"SocketException:"+e.toString());
-                    }catch (UnsupportedEncodingException e) {
+                        Log.d(TAG, "sendUP2Message:" + msg + ",len:" + msg.length());
+                    } catch (SocketException e) {
+                        Log.d(TAG, "SocketException:" + e.toString());
+                    } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -181,13 +194,53 @@ public class CCSocket {
     static Socket socket1;
 
     public static void main(String[] args) throws IOException {
-        System.out.println("任意字符, 回车键发送Toast");
         socket1 = new Socket("127.0.0.1", 8000);
+        System.out.println("任意字符, 回车键发送Toast");
         Scanner scanner = new Scanner(System.in);
         while (true) {
             String msg = scanner.next();
             sendToast(msg);
         }
+
+
+//        sendToast(imageToBase64("C:\\Users\\27253\\Desktop\\sample1.JPG"));
+    }
+
+    /**
+     * 将图片转换成Base64编码的字符串
+     */
+    public static String imageToBase64(String path) {
+//        if(TextUtils.isEmpty(path)){
+//            return null;
+//        }
+        File file = new File(path);
+        System.out.println("数据长度：" + file.length());
+
+        InputStream is = null;
+        byte[] data = null;
+        String result = null;
+        try {
+            is = new FileInputStream(file);
+            //创建一个字符流大小的数组。
+            data = new byte[is.available()];
+            //写入数组
+            is.read(data);
+            //用默认的编码格式进行编码
+            BASE64Encoder encoder = new BASE64Encoder();
+            result = encoder.encode(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (null != is) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+        return result;
     }
 
     public static void sendToast(String msg) throws IOException {
@@ -200,8 +253,8 @@ public class CCSocket {
         System.arraycopy(b, 0, sendBytes, 5, b.length);//5位置之后存储数据
 
         OutputStream dos = socket1.getOutputStream();
-        String aa = new String(sendBytes,"UTF-8");
-        System.out.println("发送内容:" + aa+",len:"+aa.length());
+        String aa = new String(sendBytes, "UTF-8");
+        System.out.println("发送内容:" + aa + ",len:" + aa.length());
         dos.write(sendBytes);
         if (!isStartThread) {
             isStartThread = true;
@@ -220,7 +273,7 @@ public class CCSocket {
                     boolean isReadLen = true;
                     while ((len = is.read(b)) != -1) {
                         if (isReadLen) {
-                            if (b[0]=='$'){
+                            if (b[0] == '$') {
                                 byte[] lenBytes = new byte[4];
                                 System.arraycopy(b, 1, lenBytes, 0, 4);
                                 int ll = byteArrayToInt(lenBytes);
@@ -230,7 +283,7 @@ public class CCSocket {
                         } else {
                             isReadLen = true;
                             String msg = new String(b, 0, len);
-                            System.out.println("接受到内容:" + msg+",len:"+msg.length());
+                            System.out.println("接受到内容:" + msg + ",len:" + msg.length());
                             sendToast(msg);
                             b = new byte[5];
                         }
