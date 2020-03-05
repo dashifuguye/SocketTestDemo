@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
     private Timer getStatusTimer;
     private GetTurbineResult getTurbineResult;
     private int statusPeriod = 1000;
-    private int port = 8000;
+    private int port = 18000;
     private USBReceiver mUsbReceiver;
 
     private Context mContext;
@@ -214,7 +214,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             //更新消息，并自动滚动下最后一条
-            receivedMsg.append("\n" + msg);
+            if (requestId != SocketConst.GET_TURBINE){
+                receivedMsg.append("\n" + msg);
+            }else {
+                receivedMsg.append("\n" + "获取缩略图");
+            }
             int offset = receivedMsg.getLineCount() * receivedMsg.getLineHeight();
             if (offset > receivedMsg.getHeight()) {
                 receivedMsg.scrollTo(0, offset - receivedMsg.getHeight());
