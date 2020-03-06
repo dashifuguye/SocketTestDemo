@@ -1,6 +1,4 @@
-package com.clobotics.sockettest;
-
-import android.widget.BaseExpandableListAdapter;
+package com.clobotics.sockettest.bean;
 
 /**
  * @author: Aya

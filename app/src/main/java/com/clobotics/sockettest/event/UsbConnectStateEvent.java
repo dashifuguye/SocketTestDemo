@@ -1,4 +1,4 @@
-package com.clobotics.sockettest;
+package com.clobotics.sockettest.event;
 
 /**
  * Author: Aya

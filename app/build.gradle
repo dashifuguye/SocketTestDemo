@@ -38,4 +38,8 @@ dependencies {
 
     //图片转base64
     compile files('libs/sun.misc.BASE64Decoder.jar')
+
+    //权限
+    implementation 'pub.devrel:easypermissions:3.0.0'
+
 }

@@ -1,4 +1,4 @@
-package com.clobotics.sockettest;
+package com.clobotics.sockettest.util;
 
 import android.content.Context;
 import android.content.Intent;
@@ -101,7 +101,7 @@ public class PicDownload {
             Log.e("test", "-------sd卡-----" + root.toString());
         }
         //将存储路径设置为工程的名字
-        File directory = new File(root, "/SocketTest/");
+        File directory = new File(root, "/Clobotics/SocketTestDemo/");
         Log.e("test", "-------完整路径-----" + directory.toString());
         //创建文件夹
         if (!directory.exists()) {
@@ -126,7 +126,7 @@ public class PicDownload {
             Uri uri = Uri.fromFile(file);
             //保存图片后发送广播通知图库更新图片
             context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
-            Toast.makeText(context,"保存成功",Toast.LENGTH_LONG).show();
+            Toast.makeText(context,directory+"保存成功",Toast.LENGTH_LONG).show();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             Toast.makeText(context,"保存失败",Toast.LENGTH_LONG).show();

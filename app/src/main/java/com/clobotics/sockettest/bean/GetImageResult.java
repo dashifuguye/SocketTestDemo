@@ -1,4 +1,4 @@
-package com.clobotics.sockettest;
+package com.clobotics.sockettest.bean;
 
 /**
  * @author: Aya
@@ -12,13 +12,13 @@ public class GetImageResult extends Base {
     public class Image {
         private int id;
         private String name;
-        private String data;
+        private String date;
         private String base64;
 
         public Image(int id, String name, String data, String base64) {
             this.id = id;
             this.name = name;
-            this.data = data;
+            this.date = data;
             this.base64 = base64;
         }
 
@@ -38,12 +38,12 @@ public class GetImageResult extends Base {
             this.name = name;
         }
 
-        public String getData() {
-            return data;
+        public String getDate() {
+            return date;
         }
 
-        public void setData(String data) {
-            this.data = data;
+        public void setDate(String date) {
+            this.date = date;
         }
 
         public String getBase64() {

@@ -7,6 +7,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
@@ -19,9 +21,28 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.clobotics.sockettest.bean.Base;
+import com.clobotics.sockettest.bean.GetImageResult;
+import com.clobotics.sockettest.bean.GetTurbineResult;
+import com.clobotics.sockettest.bean.ImageInfo;
+import com.clobotics.sockettest.bean.SendImageInfo;
+import com.clobotics.sockettest.bean.SendTurbineConfirmed;
+import com.clobotics.sockettest.bean.SendTurbineInfo;
+import com.clobotics.sockettest.bean.TurbineConfirmed;
+import com.clobotics.sockettest.bean.TurbineInfo;
+import com.clobotics.sockettest.event.ReceivedImageEvent;
+import com.clobotics.sockettest.event.ReceivedMsgEvent;
+import com.clobotics.sockettest.event.UsbConnectStateEvent;
+import com.clobotics.sockettest.socket.CCSocket;
+import com.clobotics.sockettest.socket.SocketConst;
+import com.clobotics.sockettest.util.FileManager;
+import com.clobotics.sockettest.util.PermissionsUtil;
+import com.clobotics.sockettest.util.PicDownload;
+import com.clobotics.sockettest.util.USBReceiver;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -98,7 +119,56 @@ public class MainActivity extends AppCompatActivity {
         heartbeatMsg.setMovementMethod(ScrollingMovementMethod.getInstance());
         mContext = this;
         //      registerReceiver();
+
+        if (!PermissionsUtil.hasPermissions(this)) {
+            PermissionsUtil.checkAndRequestPermissions(this);
+        }
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        boolean hasEnoughPermission = PermissionsUtil.hasPermissions(this);
+        // If there is enough permission, we will start the registration
+        if (!hasEnoughPermission) {
+            // ToastUtil.toast("Missing permissions!!!");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                showMissingPermissionDialog();
+            }
+        }
+    }
+
+    /**
+     * 需要手动开启缺失的权限对话框
+     */
+    private void showMissingPermissionDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("提示");
+        builder.setMessage("当前应用权限不足。\n\n可点击\"设置\"-\"权限管理\"-打开所需权限，并重启APP！");
+        builder.setNegativeButton("退出", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //退出app
+                finish();
+            }
+        });
+        builder.setPositiveButton("设置", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //启动应用的设置 来手动开启权限
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            }
+        });
+        builder.setCancelable(false);
+        builder.show();
+    }
+
+
 
     public void registerReceiver() {
         IntentFilter filter = new IntentFilter();
@@ -116,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 需要手动开启ADB调试对话框
      */
-    private void showMissingPermissionDialog() {
+    private void showMissingPermissionADBDialog() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("提示");
         builder.setMessage("请打开USB调试。\n\n可点击\"设置\"-\"开发者选项\"-打开USB调试，并重启APP！");
@@ -146,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "可以通信啦", Toast.LENGTH_LONG).show();
             } else {
                 receivedMsg.append("\n" + "adb未打开");
-                showMissingPermissionDialog();
+                showMissingPermissionADBDialog();
             }
         } else {
             receivedMsg.append("\n" + "usb断连");
@@ -156,11 +226,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onReceivedImageEventHappen(ReceivedImageEvent event) {
-        imageView.setVisibility(View.VISIBLE);
-        Glide.with(this)
-                .load(Base64.decode(event.msg, Base64.DEFAULT))
-                .into(imageView);
-        PicDownload.saveImage("socketTest1.jpg", event.msg, this);
+//        imageView.setVisibility(View.VISIBLE);
+//        Glide.with(this)
+//                .load(Base64.decode(event.data, Base64.DEFAULT))
+//                .into(imageView);
+        PicDownload.saveImage(event.name, event.data, this);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -192,13 +262,13 @@ public class MainActivity extends AppCompatActivity {
 
                     break;
                 case SocketConst.GET_TURBINE: //获取某个风机的缩略图，即分组结果
-                    msg = "GET_TURBINE: " + msg;
+                   // msg = "GET_TURBINE: " + msg;
                     getTurbineResult = new Gson().fromJson(event.msg, GetTurbineResult.class);
                     break;
                 case SocketConst.GET_IMAGE: //获取原图
-                    msg = "GET_IMAGE: " + msg;
+                  //  msg = "GET_IMAGE: " + msg;
                     GetImageResult getImageResult = new Gson().fromJson(event.msg, GetImageResult.class);
-
+                    EventBus.getDefault().post(new ReceivedImageEvent(getImageResult.data.getName(),getImageResult.data.getBase64()));
                     break;
                 case SocketConst.CONFIRM_TURBINE: //发送某个风机的分组确认结果
                     msg = "CONFIRM_TURBINE: " + msg;
@@ -214,11 +284,15 @@ public class MainActivity extends AppCompatActivity {
             }
 
             //更新消息，并自动滚动下最后一条
-            if (requestId != SocketConst.GET_TURBINE){
-                receivedMsg.append("\n" + msg);
+            if (requestId == SocketConst.GET_TURBINE){
+                receivedMsg.append("\n" + "获取缩略图成功，文件路径：/Clobotics/SocketTestDemo/getTurbine-*.txt");
+                FileManager.getInstance().saveData(msg);
+            }else if (requestId == SocketConst.GET_IMAGE){
+                receivedMsg.append("\n" + "获取原图成功，图片路径：/Clobotics/SocketTestDemo/");
             }else {
-                receivedMsg.append("\n" + "获取缩略图");
+                receivedMsg.append("\n" + msg);
             }
+
             int offset = receivedMsg.getLineCount() * receivedMsg.getLineHeight();
             if (offset > receivedMsg.getHeight()) {
                 receivedMsg.scrollTo(0, offset - receivedMsg.getHeight());

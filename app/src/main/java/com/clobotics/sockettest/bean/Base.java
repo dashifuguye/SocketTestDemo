@@ -1,4 +1,4 @@
-package com.clobotics.sockettest;
+package com.clobotics.sockettest.bean;
 
 import java.util.UUID;
 

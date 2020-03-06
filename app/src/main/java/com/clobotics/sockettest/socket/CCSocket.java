@@ -1,7 +1,9 @@
-package com.clobotics.sockettest;
+package com.clobotics.sockettest.socket;
 
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.clobotics.sockettest.event.ReceivedMsgEvent;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -194,7 +196,7 @@ public class CCSocket {
     static Socket socket1;
 
     public static void main(String[] args) throws IOException {
-        socket1 = new Socket("127.0.0.1", 8000);
+        socket1 = new Socket("127.0.0.1", 18000);
         System.out.println("任意字符, 回车键发送Toast");
         Scanner scanner = new Scanner(System.in);
         while (true) {
