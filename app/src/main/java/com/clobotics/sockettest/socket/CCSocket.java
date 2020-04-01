@@ -16,6 +16,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -76,11 +77,9 @@ public class CCSocket {
             if (serverSocket != null) {
                 return;
             }
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(SocketConst.SOCKET_PORT);
             while (isEnabled) {
                 final Socket socket = serverSocket.accept();
-                Log.d(TAG, "收到连接:" + socket.toString());
-                EventBus.getDefault().post(new ReceivedMsgEvent("收到连接:" + socket.toString()));
                 socket.setSoTimeout(SocketConst.SOCKET_TIMEOUT);
                 threadPool.submit(new Runnable() {
                     @Override
@@ -90,33 +89,33 @@ public class CCSocket {
                             try {
                                 is = socket.getInputStream();
                                 os = socket.getOutputStream();
-                                byte[] b = new byte[5];
-                                int len = 0;
-                                int dataLength = 0;
-                                boolean isReadLen = true;
-                                StringBuilder sb = new StringBuilder();
-                                while (isEnabled && (len = is.read(b)) != -1) {
-                                    if (isReadLen) {
-                                        if (b[0] == '$') {
-                                            sb = new StringBuilder();
-                                            byte[] lenBytes = new byte[4];
-                                            System.arraycopy(b, 1, lenBytes, 0, 4);
-                                            dataLength = byteArrayToInt(lenBytes);
-                                            Log.d(TAG, "接受数据长度:" + dataLength);
-                                            b = new byte[dataLength];
-                                            isReadLen = false;
-                                        }
-                                    } else {
-                                        String msg = new String(b, 0, len, "UTF-8");
-                                        Log.d(TAG, "接受到内容:" + msg + ",len:" + msg.length());
-                                        sb.append(msg);
-                                        if (sb.length() == dataLength) {
+                                byte[] b = new byte[4096];
 
-                                            isReadLen = true;
-                                            if (!TextUtils.isEmpty(msg.trim())) {
-                                                callProcessedMethod(sb.toString());
-                                            }
-                                            b = new byte[5];
+                                //数据格式：标识符（$,1byte）+ 命令id（requestId,2byte） + sum(2byte) + index(2byte) + data (3072byte）+ 校验位(2byte)
+                                //创建一对多数据结构，key 为id，value保存sum index 和data，
+                                HashMap<Integer, SocketApiBean> dataMap = new HashMap<>();
+                                while (isEnabled && (is.read(b)) != -1) {
+                                    if (b[0] == '$') {
+                                        byte[] temp = new byte[4];
+                                        System.arraycopy(b, 1, temp, 0, 4);
+                                        int id = byteArrayToInt(temp);
+                                        System.arraycopy(b, 5, temp, 0, 4);
+                                        int sum = byteArrayToInt(temp);
+                                        System.arraycopy(b, 9, temp, 0, 4);
+                                        int index = byteArrayToInt(temp);
+                                        String msg = new String(b, 13, 3072, "UTF-8");
+                                        if (dataMap.containsKey(id)) {
+                                            SocketApiBean bean = dataMap.get(id);
+                                            bean.setIndex(index);
+                                            bean.setData(bean.getData().append(msg));
+                                            dataMap.put(id, bean);
+                                        } else {
+                                            SocketApiBean bean = new SocketApiBean(sum, index, new StringBuilder(msg));
+                                            dataMap.put(id, bean);
+                                        }
+                                        if (dataMap.get(id).getSum() == dataMap.get(id).getIndex() + 1) {
+                                            //表示数据接收完成
+                                            callProcessedMethod(dataMap.get(id).getData().toString());
                                         }
                                     }
                                 }
@@ -148,19 +147,35 @@ public class CCSocket {
         EventBus.getDefault().post(new ReceivedMsgEvent(msg));
     }
 
-    public void sendUP2Message(final String msg) {
+    public void sendUP2Message(final int requestId, final String msg) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 if (os != null) {
                     try {
+                        byte[] idBytes = intToByteArray(requestId);
                         byte[] b = msg.getBytes("UTF-8");
-                        byte[] lenBytes = intToByteArray(b.length);
-                        byte[] sendBytes = new byte[b.length + 5];
-                        sendBytes[0] = '$';//0位置共1个字节存储消息标识符$
-                        System.arraycopy(lenBytes, 0, sendBytes, 1, 4);//1-4位置个共4个字节存储数据长度
-                        System.arraycopy(b, 0, sendBytes, 5, b.length);//5位置之后存储数据
-                        os.write(sendBytes);
+                        int sum = b.length / 3072;
+                        if (b.length % 3072 != 0) {
+                            sum += 1;
+                        }
+                        byte[] sumBytes = intToByteArray(sum);
+                        byte[] sendBytes = new byte[3089];
+                        for (int i = 0; i < sum; i++) {
+                            byte[] indexBytes = intToByteArray(i);
+                            sendBytes[0] = '$';//0位置共1个字节存储消息标识符$
+                            System.arraycopy(idBytes, 0, sendBytes, 1, 4);//1-2位置个共4个字节存储id
+                            System.arraycopy(sumBytes, 0, sendBytes, 5, 4);//3-4位置个共4个字节存储sum
+                            System.arraycopy(indexBytes, 0, sendBytes, 9, 4);//5-6位置个共4个字节存储index
+                            //计算剩余数据长度，若大于3072，则拷贝长度为3072，否则取剩余长度
+                            int remainingLen = b.length - i*3072;
+                            remainingLen = remainingLen > 3072 ? 3072: remainingLen;
+                            System.arraycopy(b, i * 3072, sendBytes, 13, remainingLen);//7-3079位置个共3072个字节存储data
+                            byte[] checkSumBytes = sumCheck(sendBytes, 4);//校验和
+                            System.arraycopy(checkSumBytes, 0, sendBytes, 3085, 4);//3079-3080位置个共2个字节存储校验和
+                            os.write(sendBytes);
+                            Log.d(TAG, "sendUP2Message:" + i + ",sendBytesMsg:" + new String(sendBytes, "UTF-8"));
+                        }
                         Log.d(TAG, "sendUP2Message:" + msg + ",len:" + msg.length());
                     } catch (SocketException e) {
                         Log.d(TAG, "SocketException:" + e.toString());
@@ -189,6 +204,31 @@ public class CCSocket {
                 (byte) ((a >> 8) & 0xFF),
                 (byte) (a & 0xFF)
         };
+    }
+
+    /**
+     * 校验和
+     *
+     * @param msg    需要计算校验和的byte数组
+     * @param length 校验和位数
+     * @return 计算出的校验和数组
+     */
+    private static byte[] sumCheck(byte[] msg, int length) {
+        long mSum = 0;
+        byte[] mByte = new byte[length];
+
+        /** 逐Byte添加位数和 */
+        for (byte byteMsg : msg) {
+            long mNum = ((long) byteMsg >= 0) ? (long) byteMsg : ((long) byteMsg + 256);
+            mSum += mNum;
+        } /** end of for (byte byteMsg : msg) */
+
+        /** 位数和转化为Byte数组 */
+        for (int liv_Count = 0; liv_Count < length; liv_Count++) {
+            mByte[length - liv_Count - 1] = (byte) (mSum >> (liv_Count * 8) & 0xff);
+        } /** end of for (int liv_Count = 0; liv_Count < length; liv_Count++) */
+
+        return mByte;
     }
 
 

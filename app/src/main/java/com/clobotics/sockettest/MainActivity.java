@@ -350,15 +350,15 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.autoGroup:
                 msg.setRequestId(SocketConst.AUTO_GROUP);
-                CCSocket.getInstance().sendUP2Message(new Gson().toJson(msg));
+                CCSocket.getInstance().sendUP2Message(SocketConst.AUTO_GROUP, new Gson().toJson(msg));
                 break;
             case R.id.pack:
                 msg.setRequestId(SocketConst.PACK);
-                CCSocket.getInstance().sendUP2Message(new Gson().toJson(msg));
+                CCSocket.getInstance().sendUP2Message(SocketConst.PACK, new Gson().toJson(msg));
                 break;
             case R.id.backup:
                 msg.setRequestId(SocketConst.BACKUP);
-                CCSocket.getInstance().sendUP2Message(new Gson().toJson(msg));
+                CCSocket.getInstance().sendUP2Message(SocketConst.BACKUP, new Gson().toJson(msg));
                 break;
             case R.id.getTurbine:
                 //获取缩略图，需要输入
@@ -371,7 +371,7 @@ public class MainActivity extends AppCompatActivity {
                     turbineInfo.setWindFarmId(farmId);
                     turbineInfo.setTurbineName(turbineNum);
                     sendTurbineInfo.setData(turbineInfo);
-                    CCSocket.getInstance().sendUP2Message(new Gson().toJson(sendTurbineInfo));
+                    CCSocket.getInstance().sendUP2Message(SocketConst.GET_TURBINE, new Gson().toJson(sendTurbineInfo));
                 } else {
                     turbineInfoInputLayout.setVisibility(View.VISIBLE);
                     Toast.makeText(this, "请输入风场id和风机号后再点击获取缩略图", Toast.LENGTH_LONG).show();
@@ -394,7 +394,7 @@ public class MainActivity extends AppCompatActivity {
                         imageInfo.setName(getTurbineResult.getData().getPaths().get(0).getInspections().get(0).getThumbnails().get(0).getName());
                         imageInfo.setDate(getTurbineResult.getData().getPaths().get(0).getInspections().get(0).getThumbnails().get(0).getDate());
                         sendImageInfo.setData(imageInfo);
-                        CCSocket.getInstance().sendUP2Message(new Gson().toJson(sendImageInfo));
+                        CCSocket.getInstance().sendUP2Message(SocketConst.GET_IMAGE, new Gson().toJson(sendImageInfo));
                         Toast.makeText(this, "正在获取第一张缩略图的原图", Toast.LENGTH_LONG).show();
                     } else {
                         Toast.makeText(this, "风机中没有图片数据！", Toast.LENGTH_LONG).show();
@@ -411,7 +411,7 @@ public class MainActivity extends AppCompatActivity {
                             && getTurbineResult.getData().getPaths().get(0).getInspections() != null
                             && getTurbineResult.getData().getPaths().get(0).getInspections().size() > 0) {
                         SendTurbineConfirmed bean = turbineResultToTurbineConfirmed();
-                        CCSocket.getInstance().sendUP2Message(new Gson().toJson(bean));
+                        CCSocket.getInstance().sendUP2Message(SocketConst.CONFIRM_TURBINE, new Gson().toJson(bean));
                         Toast.makeText(this, "若一条路径下有多次巡检，则确认第一次巡检为最终结果！", Toast.LENGTH_LONG).show();
                     } else {
                         Toast.makeText(this, "风机中没有图片数据！", Toast.LENGTH_LONG).show();
@@ -422,7 +422,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.powerOffCC:
                 msg.setRequestId(SocketConst.POWER_OFF);
-                CCSocket.getInstance().sendUP2Message(new Gson().toJson(msg));//通知CC关机
+                CCSocket.getInstance().sendUP2Message(SocketConst.POWER_OFF, new Gson().toJson(msg));//通知CC关机
                 break;
 //            case R.id.customMsg:
 //                msg.setRequestId(SocketConst.PACK);
@@ -527,7 +527,7 @@ public class MainActivity extends AppCompatActivity {
                 public void run() {
                     Base msg = new Base();
                     msg.setRequestId(SocketConst.GET_STATUS);
-                    CCSocket.getInstance().sendUP2Message(new Gson().toJson(msg));
+                    CCSocket.getInstance().sendUP2Message(SocketConst.GET_STATUS, new Gson().toJson(msg));
                 }
             };
             getStatusTimer = new Timer();

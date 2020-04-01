@@ -16,5 +16,6 @@ public class SocketConst {
     public static final int POWER_OFF = 1008; //关闭机载电脑
 
     public static final int SOCKET_TIMEOUT = 30000; //Socket连接超时时间30s
+    public static final int SOCKET_PORT = 18000; //Socket连接超时时间30s
 
 }
