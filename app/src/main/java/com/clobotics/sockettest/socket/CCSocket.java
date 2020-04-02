@@ -115,7 +115,7 @@ public class CCSocket {
                                         }
                                         if (dataMap.get(id).getSum() == dataMap.get(id).getIndex() + 1) {
                                             //表示数据接收完成
-                                            callProcessedMethod(dataMap.get(id).getData().toString());
+                                            callProcessedMethod(dataMap.remove(id).getData().toString());
                                         }
                                     }
                                 }
