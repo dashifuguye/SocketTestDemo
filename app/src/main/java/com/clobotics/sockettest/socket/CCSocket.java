@@ -170,7 +170,7 @@ public class CCSocket {
                             //计算剩余数据长度，若大于3072，则拷贝长度为3072，否则取剩余长度
                             int remainingLen = b.length - i*3072;
                             remainingLen = remainingLen > 3072 ? 3072: remainingLen;
-                            System.arraycopy(b, i * 3072, sendBytes, 13, remainingLen);//7-3079位置个共3072个字节存储data
+                            System.arraycopy(b, i * 3072, sendBytes, 3085 - remainingLen, remainingLen);//7-3079位置个共3072个字节存储data,长度不足3072则高位留空
                             byte[] checkSumBytes = sumCheck(sendBytes, 4);//校验和
                             System.arraycopy(checkSumBytes, 0, sendBytes, 3085, 4);//3079-3080位置个共2个字节存储校验和
                             os.write(sendBytes);
