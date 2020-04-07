@@ -35,6 +35,7 @@ public class CCSocket {
     private ServerSocket serverSocket = null;
     private boolean isEnabled;
     private final ExecutorService threadPool;//线程池
+    private final int packSize = 1024 * 4 - 17;
 
     private int port;
 
@@ -89,12 +90,12 @@ public class CCSocket {
                             try {
                                 is = socket.getInputStream();
                                 os = socket.getOutputStream();
-                                byte[] b = new byte[4096];
+                                byte[] b = new byte[packSize + 17];
 
                                 //数据格式：标识符（$,1byte）+ 命令id（requestId,2byte） + sum(2byte) + index(2byte) + data (3072byte）+ 校验位(2byte)
                                 //创建一对多数据结构，key 为id，value保存sum index 和data，
                                 HashMap<Integer, SocketApiBean> dataMap = new HashMap<>();
-                                while (isEnabled && (is.read(b)) != -1) {
+                                while (isEnabled && (is.read(b)) == packSize + 17) {
                                     if (b[0] == '$') {
                                         byte[] temp = new byte[4];
                                         System.arraycopy(b, 1, temp, 0, 4);
@@ -103,7 +104,8 @@ public class CCSocket {
                                         int sum = byteArrayToInt(temp);
                                         System.arraycopy(b, 9, temp, 0, 4);
                                         int index = byteArrayToInt(temp);
-                                        String msg = new String(b, 13, 3072, "UTF-8");
+                                        String msg = new String(b, 13, packSize, "UTF-8").trim();
+                                        Log.d(TAG, "id:" + id + " sum:" + sum + " index:" + index);
                                         if (dataMap.containsKey(id)) {
                                             SocketApiBean bean = dataMap.get(id);
                                             bean.setIndex(index);
@@ -155,24 +157,24 @@ public class CCSocket {
                     try {
                         byte[] idBytes = intToByteArray(requestId);
                         byte[] b = msg.getBytes("UTF-8");
-                        int sum = b.length / 3072;
-                        if (b.length % 3072 != 0) {
+                        int sum = b.length / packSize;
+                        if (b.length % packSize != 0) {
                             sum += 1;
                         }
                         byte[] sumBytes = intToByteArray(sum);
-                        byte[] sendBytes = new byte[3089];
                         for (int i = 0; i < sum; i++) {
+                            byte[] sendBytes = new byte[packSize + 17];
                             byte[] indexBytes = intToByteArray(i);
                             sendBytes[0] = '$';//0位置共1个字节存储消息标识符$
                             System.arraycopy(idBytes, 0, sendBytes, 1, 4);//1-2位置个共4个字节存储id
                             System.arraycopy(sumBytes, 0, sendBytes, 5, 4);//3-4位置个共4个字节存储sum
                             System.arraycopy(indexBytes, 0, sendBytes, 9, 4);//5-6位置个共4个字节存储index
                             //计算剩余数据长度，若大于3072，则拷贝长度为3072，否则取剩余长度
-                            int remainingLen = b.length - i*3072;
-                            remainingLen = remainingLen > 3072 ? 3072: remainingLen;
-                            System.arraycopy(b, i * 3072, sendBytes, 3085 - remainingLen, remainingLen);//7-3079位置个共3072个字节存储data,长度不足3072则高位留空
+                            int remainingLen = b.length - i * packSize;
+                            remainingLen = remainingLen > packSize ? packSize: remainingLen;
+                            System.arraycopy(b, i * packSize, sendBytes, packSize + 13 - remainingLen, remainingLen);//7-3079位置个共3072个字节存储data,长度不足3072则高位留空
                             byte[] checkSumBytes = sumCheck(sendBytes, 4);//校验和
-                            System.arraycopy(checkSumBytes, 0, sendBytes, 3085, 4);//3079-3080位置个共2个字节存储校验和
+                            System.arraycopy(checkSumBytes, 0, sendBytes, packSize + 13, 4);//3079-3080位置个共2个字节存储校验和
                             os.write(sendBytes);
                             Log.d(TAG, "sendUP2Message:" + i + ",sendBytesMsg:" + new String(sendBytes, "UTF-8"));
                         }
@@ -337,5 +339,5 @@ public class CCSocket {
             }
         }.start();
     }
-
+    
 }
